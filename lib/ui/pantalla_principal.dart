@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../model/incidencia.dart';
 import '../services/gestor_incidencias.dart';
+import 'etiqueta_prioridad.dart';
 import 'pantalla_detalle.dart';
 import 'pantalla_nueva.dart';
 
@@ -187,9 +188,17 @@ class _PantallaPrincipalState extends State<PantallaPrincipal> {
                                             children: [
                                               Text('${item.id}  ·  ${item.cliente}'),
                                               const SizedBox(height: 6),
-                                              Text(item.estado, style: TextStyle(
-                                                color: colorEstado(item.estado), fontWeight: FontWeight.bold,
-                                              )),
+                                              Wrap(
+                                                spacing: 10,
+                                                runSpacing: 4,
+                                                crossAxisAlignment: WrapCrossAlignment.center,
+                                                children: [
+                                                  Text(item.estado, style: TextStyle(
+                                                    color: colorEstado(item.estado), fontWeight: FontWeight.bold,
+                                                  )),
+                                                  EtiquetaPrioridad(prioridad: item.prioridad),
+                                                ],
+                                              ),
                                             ],
                                           ),
                                         ),

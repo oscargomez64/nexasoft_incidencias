@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../model/incidencia.dart';
 import '../services/gestor_incidencias.dart';
+import 'etiqueta_prioridad.dart';
 
 class PantallaDetalle extends StatefulWidget {
   final GestorIncidencias gestor;
@@ -19,6 +20,21 @@ class _PantallaDetalleState extends State<PantallaDetalle> {
     setState(() => guardando = true);
     try {
       await widget.gestor.cambiarEstado(widget.id, valor);
+      if (mounted) setState(() {});
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('No se pudo guardar: $e')));
+      }
+    } finally {
+      if (mounted) setState(() => guardando = false);
+    }
+  }
+
+  Future<void> cambiarPrioridad(String? valor) async {
+    if (valor == null) return;
+    setState(() => guardando = true);
+    try {
+      await widget.gestor.cambiarPrioridad(widget.id, valor);
       if (mounted) setState(() {});
     } catch (e) {
       if (mounted) {
@@ -63,6 +79,13 @@ class _PantallaDetalleState extends State<PantallaDetalle> {
                         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                           fila('Cliente', item.cliente),
                           fila('Categoría', item.categoria),
+                          Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 7),
+                            child: Align(
+                              alignment: Alignment.centerLeft,
+                              child: EtiquetaPrioridad(prioridad: item.prioridad),
+                            ),
+                          ),
                           fila('Fecha de reporte', item.fecha),
                           fila('Descripción', item.descripcion),
                         ]),
@@ -76,6 +99,15 @@ class _PantallaDetalleState extends State<PantallaDetalle> {
                           .map((v) => DropdownMenuItem(value: v, child: Text(v)))
                           .toList(),
                       onChanged: guardando ? null : cambiar,
+                    ),
+                    const SizedBox(height: 16),
+                    DropdownButtonFormField<String>(
+                      value: item.prioridad,
+                      decoration: const InputDecoration(labelText: 'Prioridad', border: OutlineInputBorder()),
+                      items: Prioridad.valores
+                          .map((v) => DropdownMenuItem(value: v, child: Text(v)))
+                          .toList(),
+                      onChanged: guardando ? null : cambiarPrioridad,
                     ),
                     if (guardando) const Padding(
                       padding: EdgeInsets.only(top: 12), child: LinearProgressIndicator(),
