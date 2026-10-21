@@ -9,15 +9,50 @@ class GestorIncidencias {
     incidencias = await datos.leer();
   }
 
-  List<Incidencia> buscar(String texto) {
+  /// Opciones de los filtros de la pantalla principal (FEAT-002).
+  static const String todosEstados = 'Todos';
+  static const String todasPrioridades = 'Todas';
+  static const List<String> opcionesEstado = [
+    todosEstados,
+    'Pendiente',
+    'En proceso',
+    'Resuelta',
+  ];
+  static const List<String> opcionesPrioridad = [
+    todasPrioridades,
+    ...Prioridad.valores,
+  ];
+
+  /// Aplica a la vez todas las condiciones activas: texto (en titulo o
+  /// descripcion, sin distinguir mayusculas ni espacios sobrantes), estado y
+  /// prioridad. 'Todos' y 'Todas' no restringen.
+  static List<Incidencia> aplicarFiltros(
+    List<Incidencia> lista, {
+    String texto = '',
+    String estado = todosEstados,
+    String prioridad = todasPrioridades,
+  }) {
     final consulta = texto.trim().toLowerCase();
-    if (consulta.isEmpty) return incidencias;
-    return incidencias
-        .where((x) =>
-            x.titulo.toLowerCase().contains(consulta) ||
-            x.descripcion.toLowerCase().contains(consulta))
-        .toList();
+    return lista.where((x) {
+      if (estado != todosEstados && x.estado != estado) return false;
+      if (prioridad != todasPrioridades && x.prioridad != prioridad) {
+        return false;
+      }
+      if (consulta.isEmpty) return true;
+      return x.titulo.toLowerCase().contains(consulta) ||
+          x.descripcion.toLowerCase().contains(consulta);
+    }).toList();
   }
+
+  List<Incidencia> filtrar({
+    String texto = '',
+    String estado = todosEstados,
+    String prioridad = todasPrioridades,
+  }) =>
+      aplicarFiltros(incidencias,
+          texto: texto, estado: estado, prioridad: prioridad);
+
+  List<Incidencia> buscar(String texto) => filtrar(texto: texto);
 
   Incidencia? porId(String id) {
     for (var x in incidencias) {
