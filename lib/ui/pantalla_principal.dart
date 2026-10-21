@@ -17,6 +17,52 @@ class _PantallaPrincipalState extends State<PantallaPrincipal> {
   bool cargando = true;
   String? error;
   String busqueda = '';
+  String filtroEstado = GestorIncidencias.todosEstados;
+  String filtroPrioridad = GestorIncidencias.todasPrioridades;
+  final TextEditingController controlBusqueda = TextEditingController();
+
+  bool get hayFiltros =>
+      busqueda.trim().isNotEmpty ||
+      filtroEstado != GestorIncidencias.todosEstados ||
+      filtroPrioridad != GestorIncidencias.todasPrioridades;
+
+  void restablecerFiltros() {
+    controlBusqueda.clear();
+    setState(() {
+      busqueda = '';
+      filtroEstado = GestorIncidencias.todosEstados;
+      filtroPrioridad = GestorIncidencias.todasPrioridades;
+    });
+  }
+
+  @override
+  void dispose() {
+    controlBusqueda.dispose();
+    super.dispose();
+  }
+
+  Widget selectorFiltro(String etiqueta, String valor, List<String> opciones,
+      ValueChanged<String> alCambiar) {
+    return InputDecorator(
+      decoration: InputDecoration(
+        labelText: etiqueta,
+        border: const OutlineInputBorder(),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+      ),
+      child: DropdownButtonHideUnderline(
+        child: DropdownButton<String>(
+          value: valor,
+          isExpanded: true,
+          items: opciones
+              .map((o) => DropdownMenuItem(value: o, child: Text(o)))
+              .toList(),
+          onChanged: (v) {
+            if (v != null) alCambiar(v);
+          },
+        ),
+      ),
+    );
+  }
 
   @override
   void initState() {
@@ -85,7 +131,11 @@ class _PantallaPrincipalState extends State<PantallaPrincipal> {
 
   @override
   Widget build(BuildContext context) {
-    final items = g.buscar(busqueda);
+    final items = g.filtrar(
+      texto: busqueda,
+      estado: filtroEstado,
+      prioridad: filtroPrioridad,
+    );
     return Scaffold(
       appBar: AppBar(
         title: const Text('NexaSoft | Incidencias'),
@@ -152,6 +202,7 @@ class _PantallaPrincipalState extends State<PantallaPrincipal> {
                         Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 17, vertical: 5),
                           child: TextField(
+                            controller: controlBusqueda,
                             decoration: const InputDecoration(
                               labelText: 'Buscar incidencias',
                               hintText: 'Ejemplo: WiFi, correo, pantalla',
@@ -162,15 +213,54 @@ class _PantallaPrincipalState extends State<PantallaPrincipal> {
                           ),
                         ),
                         Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 17, vertical: 5),
+                          child: Row(children: [
+                            Expanded(
+                              child: selectorFiltro('Estado', filtroEstado, GestorIncidencias.opcionesEstado,
+                                  (v) => setState(() => filtroEstado = v)),
+                            ),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: selectorFiltro('Prioridad', filtroPrioridad, GestorIncidencias.opcionesPrioridad,
+                                  (v) => setState(() => filtroPrioridad = v)),
+                            ),
+                          ]),
+                        ),
+                        Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
-                          child: Align(
-                            alignment: Alignment.centerLeft,
-                            child: Text('${items.length} registros', style: const TextStyle(color: Colors.black54)),
-                          ),
+                          child: Row(children: [
+                            Expanded(
+                              child: Text('${items.length} registros', style: const TextStyle(color: Colors.black54)),
+                            ),
+                            TextButton.icon(
+                              onPressed: hayFiltros ? restablecerFiltros : null,
+                              icon: const Icon(Icons.filter_alt_off_outlined, size: 18),
+                              label: const Text('Limpiar búsqueda y filtros'),
+                            ),
+                          ]),
                         ),
                         Expanded(
                           child: items.isEmpty
-                              ? const Center(child: Text('No se encontraron incidencias'))
+                              ? Center(
+                                  child: Padding(
+                                    padding: const EdgeInsets.all(24),
+                                    child: Column(mainAxisSize: MainAxisSize.min, children: [
+                                      const Icon(Icons.search_off, size: 40, color: Colors.black38),
+                                      const SizedBox(height: 8),
+                                      const Text(
+                                        'No hay incidencias que coincidan con la búsqueda y los filtros activos.',
+                                        textAlign: TextAlign.center,
+                                      ),
+                                      if (hayFiltros) ...[
+                                        const SizedBox(height: 12),
+                                        OutlinedButton(
+                                          onPressed: restablecerFiltros,
+                                          child: const Text('Limpiar búsqueda y filtros'),
+                                        ),
+                                      ],
+                                    ]),
+                                  ),
+                                )
                               : ListView.builder(
                                   padding: const EdgeInsets.only(left: 12, right: 12, bottom: 100),
                                   itemCount: items.length,
