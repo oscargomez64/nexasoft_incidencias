@@ -25,6 +25,7 @@ Scripts alternativos: `preparar.ps1` (Windows PowerShell) o `preparar.sh` (Linux
 - Lista y detalle de incidencias, búsqueda y contador por estado.
 - Registro de incidencias en el almacenamiento local del dispositivo.
 - Cambio de estado desde la pantalla de detalle.
+- Prioridad (Baja, Media o Alta) al registrar, visible en lista y detalle y editable desde el detalle. Los registros antiguos sin prioridad se abren con Media.
 - Botón de reinicio de datos de demostración (ícono de flecha circular en la barra superior).
 
 La app usa un JSON de ejemplo como datos iniciales; después almacena los registros localmente. **Cambiar el JSON incluido no equivale a actualizar registros ya creados en el almacenamiento del dispositivo.** La opción Restablecer demostración elimina los cambios locales y restaura la semilla; usarla solo cuando se requiera reiniciar pruebas.
