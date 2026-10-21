@@ -4,12 +4,9 @@ import '../model/incidencia.dart';
 class GestorIncidencias {
   final AlmacenLocal datos = AlmacenLocal();
   List<Incidencia> incidencias = [];
-  int cantidadPendientes = 0;
 
   Future<void> iniciar() async {
     incidencias = await datos.leer();
-    cantidadPendientes =
-        incidencias.where((x) => x.estado == 'Pendiente').length;
   }
 
   List<Incidencia> buscar(String texto) {
@@ -46,8 +43,32 @@ class GestorIncidencias {
     }
   }
 
+  /// Cambia la prioridad de una incidencia y la guarda. Si el valor no es uno
+  /// de los tres aprobados se rechaza; si el guardado falla se restaura el
+  /// valor anterior y se relanza el error.
+  Future<void> cambiarPrioridad(String id, String prioridad) async {
+    if (!Prioridad.esValida(prioridad)) {
+      throw ArgumentError.value(prioridad, 'prioridad', 'Valor no permitido');
+    }
+    final item = porId(id);
+    if (item == null) return;
+    final anterior = item.prioridad;
+    if (anterior == prioridad) return;
+    item.prioridad = prioridad;
+    try {
+      await datos.guardar(incidencias);
+    } catch (e) {
+      item.prioridad = anterior;
+      rethrow;
+    }
+  }
+
   Future<void> crear(String titulo, String descripcion, String cliente,
-      String categoria) async {
+      String categoria,
+      {String prioridad = Prioridad.porDefecto}) async {
+    if (!Prioridad.esValida(prioridad)) {
+      throw ArgumentError.value(prioridad, 'prioridad', 'Valor no permitido');
+    }
     final nuevo = Incidencia(
       id: 'INC-${DateTime.now().microsecondsSinceEpoch}',
       titulo: titulo,
@@ -56,10 +77,15 @@ class GestorIncidencias {
       categoria: categoria,
       estado: 'Pendiente',
       fecha: DateTime.now().toIso8601String().split('T').first,
+      prioridad: prioridad,
     );
     incidencias.insert(0, nuevo);
-    cantidadPendientes++;
-    await datos.guardar(incidencias);
+    try {
+      await datos.guardar(incidencias);
+    } catch (e) {
+      incidencias.remove(nuevo);
+      rethrow;
+    }
   }
 
   Future<void> reiniciarDemo() async {
